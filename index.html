@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аудіоплеєр з текстом пісні</title>
+    <style>
+        /* Загальні стилі */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .file-upload-button {
+            background-color: #6b7280;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        .file-upload-button:hover {
+            background-color: #4b5563;
+        }
+        .file-upload-input {
+            display: none;
+        }
+
+        /* Аудіоплеєр */
+        #audio-player {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            appearance: none;
+            height: 0.5rem;
+        }
+
+        #audio-player::-webkit-slider-runnable-track,
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: #e5e7eb;
+            border-radius: 0.5rem;
+            height: 0.5rem;
+            cursor: pointer;
+        }
+
+        #audio-player::-webkit-slider-thumb,
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 1.25rem;
+            width: 1.25rem;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            margin-top: -0.375rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #audio-player::-webkit-slider-thumb:hover,
+        #audio-player::-webkit-slider-thumb:active,
+        input[type="range"]::-webkit-slider-thumb:hover,
+        input[type="range"]::-webkit-slider-thumb:active {
+            background: #2563eb;
+        }
+
+        /* Лірика */
+        #lyrics-display {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            text-align: left;
+            max-height: 200px;
+            border: 1px solid #e5e7eb;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+            overflow-y: scroll;
+            scroll-behavior: smooth;
+            position: relative;
+            cursor: default;
+        }
+
+        #lyrics-display p {
+            transition: background-color 0.3s, color 0.3s;
+            padding: 0.25rem;
+            border-radius: 0.375rem;
+            min-height: 1.5em;
+            line-height: 1.5em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #lyrics-display p span:first-child {
+            font-weight: bold;
+            color: #6b7280;
+            margin-right: 0.5rem;
+            min-width: 4em;
+            text-align: right;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        #lyrics-display p.highlight {
+            background-color: #fef08a;
+            color: #1e293b;
+        }
+
+        /* Контролери */
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .control-button {
+            background-color: #3b82f6;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-size: 1rem;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .control-button:hover {
+            background-color: #2563eb;
+        }
+        .control-button:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+
+        /* Слайдери */
+        input[type="range"] {
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-moz-range-track {
+            background: #e5e7eb;
+            border-radius: 0.5rem;
+            height: 0.5rem;
+        }
+        input[type="range"]::-moz-range-thumb {
+            height: 1.25rem;
+            width: 1.25rem;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+        input[type="range"]::-moz-range-thumb:hover,
+        input[type="range"]::-moz-range-thumb:active {
+            background: #2563eb;
+        }
+
+        input[type="range"]::-ms-track {
+            width: 100%;
+            cursor: pointer;
+            background: transparent;
+            border-color: transparent;
+            color: transparent;
+        }
+        input[type="range"]::-ms-fill-lower {
+            background: #d1d5db;
+            border-radius: 0.5rem;
+        }
+        input[type="range"]::-ms-fill-upper {
+            background: #e5e7eb;
+            border-radius: 0.5rem;
+        }
+        input[type="range"]::-ms-thumb {
+            height: 1.25rem;
+            width: 1.25rem;
+            background: #3b82f6;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+        input[type="range"]::-ms-thumb:hover,
+        input[type="range"]::-ms-thumb:active {
+            background: #2563eb;
+        }
+
+        /* Мобільні стилі */
+        @media (max-width: 640px) {
+        .container {
+            padding: 1rem;
+        }
+        .controls {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        #volume-slider {
+            width: 100%;
+        }
+        .file-upload-button {
+            margin-bottom: 0.75rem;
+        }
+        }
+
+        /* Специфічні елементи */
+        #seek-slider-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        #seek-slider {
+            flex: 1;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        #time-display {
+            font-size: 1rem;
+            color: #6b7280;
+            text-align: center;
+            position: relative;
+            top: 50%;
+            transform: translateY(-40%);
+            margin-left: 1rem;
+            margin-right: 0.3rem;
+        }
+        #play-pause-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            transform: translateY(-17%);
+        }
+        #play-pause-button:hover {
+            opacity: 0.7;
+        }
+        #play-pause-button svg {
+            width: 1.8rem;
+            height: 1.8rem;
+        }
+        .play-icon {
+            fill: #3b82f6;
+        }
+        .pause-icon {
+            fill: #3b82f6;
+            display: none;
+        }
+        #play-pause-button.playing .play-icon {
+            display: none;
+        }
+        #play-pause-button.playing .pause-icon {
+            display: block;
+        }
+        #stop-button {
+            width: 1rem;
+            height: 1rem;
+            background-color: #3b82f6;
+            border: none;
+            border-radius: 0.125rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 1;
+            transition: opacity 0.2s ease;
+            transform: translateY(-45%);
+            margin-right: 1rem;
+        }
+        #stop-button:hover {
+            opacity: 0.7;
+        }
+        #stop-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Гучність */
+        #volume-container {
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+        #volume-icon {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #3b82f6;
+            transform: translateY(-40%);
+        }
+        #volume-icon img {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+        }
+        #volume-slider {
+            position: absolute;
+            left: 1rem;
+            top: -70%;
+            transform: translateY(-200%) rotate(-90deg);
+            width: 5rem;
+            height: 0.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            transition-delay: 1s;
+        }
+        #volume-container:hover #volume-slider {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0s;
+        }
+        #volume-slider::-webkit-slider-thumb,
+        #volume-slider::-moz-range-thumb {
+            width: 1rem;
+            height: 0.5rem;
+            background-color: #3b82f6;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        #volume-slider::-webkit-slider-track,
+        #volume-slider::-moz-range-track,
+        #volume-slider::-ms-track {
+            background: #d1d5db;
+            border-radius: 0.25rem;
+            height: 0.5rem;
+        }
+        #volume-slider::-ms-fill-lower {
+            background: #3b82f6;
+            border-radius: 0.25rem;
+        }
+        #volume-slider::-ms-fill-upper {
+            background: #d1d5db;
+            border-radius: 0.25rem;
+        }
+
+        /* Інфо про файл */
+        #file-info-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+        #audio-file-name,
+        #subtitle-file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 250px;
+            text-align: center;
+        }
+        #audio-file-name {
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 0.25rem;
+        }
+        #subtitle-file-name {
+            font-size: 0.7rem;
+            color: #777;
+            display: none;
+        }
+        #subtitle-file-name.visible {
+            display: block;
+        }
+
+        /* Футер */
+        #footer {
+            margin-top: 2rem;
+            text-align: center;
+            color: #888;
+            font-size: 0.75rem;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding-bottom: 0.5rem;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="container">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-4">Аудіоплеєр з субтитрами</h1>
+        <div class="flex flex-col items-center">
+            <label for="audio-upload" class="file-upload-button">
+                <span>Обрати аудіофайл</span>
+            </label>
+            <input type="file" id="audio-upload" class="file-upload-input" accept="audio/mpeg, audio/wav, audio/ogg">
+            <label for="vtt-upload" class="file-upload-button">
+                <span>Обрати файл субтитрів (.vtt, .srt)</span>
+            </label>
+            <input type="file" id="vtt-upload" class="file-upload-input" accept=".vtt, .srt">
+        </div>
+        <div id="file-info-container">
+            <div id="audio-file-name"></div>
+            <div id="subtitle-file-name"></div>
+        </div>
+        <audio id="audio-player" preload="metadata"></audio>
+        <div id="seek-slider-container">
+            <button id="play-pause-button">
+                <svg class="play-icon" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg class="pause-icon" viewBox="0 0 24 24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                </svg>
+            </button>
+            <button id="stop-button"></button>
+            <input type="range" id="seek-slider" min="0" max="100" value="0">
+            <span id="time-display">00:00</span>
+            <div id="volume-container">
+                <div id="volume-icon-container" style="padding: 0; margin-left: 0.5rem;">
+                    <img id="volume-icon" src="path/to/your/volume-high.svg" alt="Volume High">
+                </div>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1">
+            </div>
+        </div>
+        <div id="lyrics-display" class="text-gray-700">Субтитри відобразяться тут...</div>
+        <footer id="footer">
+            Зроблено Kuuderephile у 2025 році
+        </footer>
+    </div>
+    <script>
+    const audioUpload = document.getElementById('audio-upload');
+    const vttUpload = document.getElementById('vtt-upload');
+    const audioPlayer = document.getElementById('audio-player');
+    const lyricsDisplay = document.getElementById('lyrics-display');
+    const playPauseButton = document.getElementById('play-pause-button');
+    const stopButton = document.getElementById('stop-button');
+    const volumeSlider = document.getElementById('volume-slider');
+    const seekSlider = document.getElementById('seek-slider');
+    const timeDisplay = document.getElementById('time-display');
+    const seekSliderContainer = document.getElementById('seek-slider-container');
+    const volumeContainer = document.getElementById('volume-container');
+    const volumeIcon = document.getElementById('volume-icon');
+    const volumeIconContainer = document.getElementById('volume-icon-container');
+    const audioFileNameDisplay = document.getElementById('audio-file-name');
+    const subtitleFileNameDisplay = document.getElementById('subtitle-file-name');
+
+    let currentAudioFile = null;
+    let currentVttFile = null;
+    let lyrics = [];
+    let currentLineIndex = 0;
+    let animationFrameId;
+    let autoScroll = true;
+    let isSeeking = false;
+    let seekTime = 0;
+    let audioPlaying = false;
+    let userSeeking = false;
+    let previousTime = 0;
+    let subtitleFormat = '';
+    let volumeLevel = 1;
+
+    seekSlider.value = 0;
+    stopButton.disabled = true;
+
+    playPauseButton.addEventListener('click', () => {
+        if (audioPlayer.src) {
+            if (audioPlayer.paused) {
+                audioPlayer.play().then(() => {
+                    playPauseButton.classList.add('playing');
+                    stopButton.disabled = false;
+                    audioPlaying = true;
+                    startHighlighting();
+                }).catch(error => {
+                    console.error("Помилка відтворення аудіо:", error);
+                    alert("Не вдалося відтворити аудіо. Можливо, файл пошкоджено або не підтримується.");
+                });
+            } else {
+                audioPlayer.pause();
+                playPauseButton.classList.remove('playing');
+                stopButton.disabled = false;
+                audioPlaying = false;
+                cancelAnimationFrame(animationFrameId);
+            }
+        } else {
+            alert("Будь ласка, оберіть аудіофайл.");
+        }
+    });
+
+    stopButton.addEventListener('click', () => {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
+        playPauseButton.classList.remove('playing');
+        stopButton.disabled = true;
+        audioPlaying = false;
+        currentLineIndex = 0;
+        clearHighlighting();
+        seekSlider.value = 0;
+        timeDisplay.textContent = '00:00';
+        audioFileNameDisplay.textContent = 'Жоден аудіофайл не вибрано';
+        subtitleFileNameDisplay.textContent = currentVttFile ? currentVttFile.name : 'Жоден файл субтитрів не вибрано';
+        subtitleFileNameDisplay.classList.remove('visible');
+    });
+
+    volumeSlider.addEventListener('input', () => {
+        audioPlayer.volume = volumeSlider.value;
+        updateVolumeIcon(volumeSlider.value);
+    });
+
+    audioUpload.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        currentAudioFile = file;
+        const fileURL = URL.createObjectURL(file);
+        audioPlayer.src = fileURL;
+
+        // Скидання тексту і відображення тільки в разі завантаження нового файлу субтитрів
+        if (!currentVttFile) {
+            lyrics = [];
+            lyricsDisplay.innerHTML = 'Текст пісні відобразиться тут..';
+            currentLineIndex = 0;
+            clearHighlighting();
+        }
+
+        stopButton.disabled = false;
+        playPauseButton.classList.remove('playing');
+        audioPlaying = false;
+
+        audioFileNameDisplay.textContent = file.name;
+        subtitleFileNameDisplay.textContent = currentVttFile ? currentVttFile.name : 'Жоден файл субтитрів не вибрано';
+        subtitleFileNameDisplay.classList.toggle('visible', !!currentVttFile);
+
+        audioPlayer.onloadedmetadata = () => {
+            seekSlider.max = audioPlayer.duration;
+        };
+    });
+
+    vttUpload.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        currentVttFile = file;
+        const reader = new FileReader();
+        const fileType = file.name.split('.').pop().toLowerCase();
+        subtitleFormat = fileType;
+
+        reader.onload = function(e) {
+            const content = e.target.result;
+            if (fileType === 'vtt') {
+                parseVtt(content);
+            } else if (fileType === 'srt') {
+                parseSrt(content);
+            } else {
+                alert('Непідтримуваний формат файлу субтитрів. Будь ласка, використовуйте .vtt або .srt.');
+                lyrics = [];
+                lyricsDisplay.innerHTML = 'Текст пісні відобразиться тут..';
+                currentLineIndex = 0;
+                clearHighlighting();
+            }
+             subtitleFileNameDisplay.textContent = file.name;
+             subtitleFileNameDisplay.classList.add('visible');
+        };
+        reader.onerror = function(error) {
+            console.error("Помилка читання файлу субтитрів:", error);
+            alert("Не вдалося прочитати файл субтитрів. Перевірте формат файлу.");
+        };
+
+        reader.readAsText(file);
+    });
+
+    function parseVtt(vttContent) {
+        const lines = vttContent.trim().split('\n').filter(line => line.trim() !== '');
+        if (lines[0] !== 'WEBVTT') {
+            console.error("Невірний формат файлу VTT: Відсутній заголовок WEBVTT.");
+            alert("Невірний формат файлу субтитрів. Файл повинен починатися з 'WEBVTT'.");
+            return;
+        }
+
+        lyrics = [];
+        let i = 1;
+        while (i < lines.length) {
+            let line = lines[i].trim();
+            if (line.includes('-->')) {
+                const parts = line.split('-->').map(p => p.trim());
+                if (parts.length === 2) {
+                    const startTime = parseVttTime(parts[0]);
+                    const endTime = parseVttTime(parts[1]);
+                    let text = lines[i + 1]?.trim() || '';
+                    if (!isNaN(parseInt(lines[i + 1]?.trim()))) {
+                        i++;
+                    }
+                    lyrics.push({ startTime, endTime, text });
+                    i++;
+                } else {
+                    console.warn(`Неправильний формат рядка часу VTT: ${line}`);
+                    i++;
+                }
+            } else {
+                i++;
+            }
+        }
+        displayLyrics();
+    }
+
+    function parseSrt(srtContent) {
+        const lines = srtContent.trim().split('\n').filter(line => line.trim() !== '');
+        lyrics = [];
+        let i = 0;
+        while (i < lines.length) {
+            let line = lines[i].trim();
+            if (line.includes('-->')) {
+                const parts = line.split('-->').map(p => p.trim());
+                if (parts.length === 2) {
+                    const startTime = parseSrtTime(parts[0]);
+                    const endTime = parseSrtTime(parts[1]);
+                    let text = lines[i + 1]?.trim() || '';
+                     if (!isNaN(parseInt(lines[i + 1]?.trim()))) {
+                        i++;
+                    }
+                    lyrics.push({ startTime, endTime, text });
+                    i++;
+                } else {
+                    console.warn(`Неправильний формат рядка часу SRT: ${line}`);
+                    i++;
+                }
+            } else {
+                i++;
+            }
+        }
+        displayLyrics();
+    }
+
+    function parseSrtTime(timeString) {
+        const parts = timeString.replace(',', '.').split(':');
+        const seconds = parseFloat(parts[2]);
+        const minutes = parseInt(parts[1]);
+        const hours = parseInt(parts[0]);
+        return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    function parseVttTime(timeString) {
+        const parts = timeString.split(':');
+        const secondsParts = parts[parts.length - 1].split('.');
+        let seconds = parseFloat(secondsParts[0]);
+        seconds += parseFloat('0.' + secondsParts[1]);
+        let minutes = 0;
+        let hours = 0;
+        if (parts.length > 2) {
+            minutes = parseInt(parts[parts.length - 2]);
+            hours = parseInt(parts[parts.length - 3]);
+        } else if (parts.length > 1) {
+            minutes = parseInt(parts[parts.length - 2]);
+        }
+        return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    function formatTime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        return `${h > 0 ? `${h}:` : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+
+    function displayLyrics() {
+        lyricsDisplay.innerHTML = '';
+        lyrics.forEach((line, index) => {
+            const p = document.createElement('p');
+            p.innerHTML = `<span>${formatTime(line.startTime)}</span><span>${line.text}</span>`;
+            p.dataset.startTime = line.startTime;
+            p.dataset.endTime = line.endTime;
+            lyricsDisplay.appendChild(p);
+        });
+    }
+
+    function startHighlighting() {
+        if (lyrics.length === 0) return;
+
+        function highlightLine() {
+            const currentTime = audioPlayer.currentTime;
+            timeDisplay.textContent = formatTime(currentTime);
+            if (!isSeeking) {
+                seekSlider.value = currentTime;
+            }
+
+            let newIndex = currentLineIndex;
+             if (currentTime < seekTime) {
+                newIndex = 0;
+                for (let i = 0; i < lyrics.length; i++) {
+                    if (currentTime >= lyrics[i].startTime && currentTime <= lyrics[i].endTime) {
+                        newIndex = i;
+                        break;
+                    }
+                }
+                if (newIndex > 0) {
+                    newIndex -= 1;
+                }
+                currentLineIndex = newIndex;
+                clearHighlighting();
+            }
+            if (currentTime < previousTime) {
+                currentLineIndex = 0;
+                clearHighlighting();
+                 for (let i = 0; i < lyrics.length; i++) {
+                    if (currentTime >= lyrics[i].startTime && currentTime <= lyrics[i].endTime) {
+                        newIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            if (currentLineIndex < lyrics.length && currentTime >= lyrics[currentLineIndex].endTime) {
+                clearHighlighting();
+                currentLineIndex++;
+            }
+
+            if (currentLineIndex < lyrics.length && currentTime >= lyrics[currentLineIndex].startTime && currentTime <= lyrics[currentLineIndex].endTime) {
+                const currentParagraph = lyricsDisplay.children[currentLineIndex];
+                if (currentParagraph) {
+                    currentParagraph.classList.add('highlight');
+                    const isVisible = isElementInViewport(currentParagraph, lyricsDisplay);
+                    if (autoScroll && audioPlaying && !isVisible) {
+                        currentParagraph.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest'
+                        });
+                    }
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(highlightLine);
+            previousTime = currentTime;
+        }
+
+        if (audioPlaying) {
+            highlightLine();
+        }
+    }
+
+    function clearHighlighting() {
+        Array.from(lyricsDisplay.children).forEach(p => p.classList.remove('highlight'));
+    }
+
+    seekSlider.addEventListener('input', () => {
+        isSeeking = true;
+        userSeeking = true;
+        seekTime = audioPlayer.currentTime;
+        audioPlayer.currentTime = seekSlider.value;
+        startHighlighting();
+    });
+
+    seekSlider.addEventListener('change', () => {
+        isSeeking = false;
+        userSeeking = false;
+    });
+
+    audioPlayer.addEventListener('timeupdate', () => {
+        if (!isSeeking) {
+            seekSlider.value = audioPlayer.currentTime;
+        }
+        if (!userSeeking) {
+             timeDisplay.textContent = formatTime(audioPlayer.currentTime);
+        }
+    });
+
+    lyricsDisplay.addEventListener('click', (event) => {
+        let target = event.target;
+        if (target.tagName === 'SPAN') {
+            target = target.parentNode;
+        }
+        if (target.tagName === 'P') {
+            const clickedParagraph = target;
+            const startTime = parseFloat(clickedParagraph.dataset.startTime);
+            if (!isNaN(startTime)) {
+                audioPlayer.currentTime = startTime;
+                seekTime = startTime;
+                startHighlighting();
+            }
+        }
+    });
+
+    lyricsDisplay.addEventListener('wheel', (event) => {
+        if (audioPlaying) {
+            event.preventDefault();
+        }
+    }, { passive: false });
+
+    function isElementInViewport(el, container) {
+        const rect = el.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        return (
+            rect.top >= containerRect.top &&
+            rect.left >= containerRect.left &&
+            rect.bottom <= containerRect.bottom &&
+            rect.right <= containerRect.right
+        );
+    }
+    function updateVolumeIcon(volume) {
+        volumeLevel = volume;
+        const volumeIconElement = document.getElementById('volume-icon');
+        if (volume > 0.6) {
+            volumeIconElement.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAYCAYAAACfpi8JAAAACXBIWXMAAAsTAAALEwEAmpwYAAAG/mlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDEgNzkuMTQ2Mjg5OSwgMjAyMy8wNi8yNS0yMDowMTo1NSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyNS0wNS0xNFQwNjowMjo1MyswMzowMCIgeG1wOk1vZGlmeURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MTUrMDM6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MTUrMDM6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwYWQ4NGRmLTM2NTUtY2M0ZC1iMjUzLTNiMzY5MzlkYzkzOSIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOmVjMDc4ZGExLTBiN2YtZWM0Yy04OTE0LTdlZGIzMGU3OTIyMSIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOmI1ZjlhYmU2LTE2YWUtODA0OS1iM2M1LWU2MTQ0OThiNzAwNSI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6YjVmOWFiZTYtMTZhZS04MDQ5LWIzYzUtZTYxNDQ5OGI3MDA1IiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjAyOjUzKzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNvbnZlcnRlZCIgc3RFdnQ6cGFyYW1ldGVycz0iZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MDg2NzdhYTUtMGYxYy0yZDQ4LTgwNGItNzFkYjljM2IzZDNmIiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjEyOjA1KzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjYwYWQ4NGRmLTM2NTUtY2M0ZC1iMjUzLTNiMzY5MzlkYzkzOSIgc3RFdnQ6d2hlbj0iMjAyNS0wNS0xNFQwNjoxODoxNSswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PhOvj+4AAAPzSURBVEiJpZddaFxFGIafmdnds7tppE0MaUKDiRaTVs1VKGgoWLUgKIJFvfBCL1QsWvCnaLV6VS9apVIUvNALQQRF8KKF1r9qLLbaEkW0Wom/USpuTKrGNrt7ds+eM17Mtz2nYROzm4Hlfc/MO7vvmfnm+2bV6K4Sy2jbgNuA64EQQAFzJsdlxcMMFA9QNl3z56wDrgNeA+bqnallmHgWeFx46MBS0Xnaa+fo8Y9R1SsazXsbWA/cCYzWO3ULBrqBwwkT38VDhpqCvvL75Gp/UlNtjea/J3gNcF+rRm4ETgE3JPpkVS2+9lgVFOj2P8M3F6OI6ppNwErh24Hvhb8AeM0aeRp4F+hsPGyIFPSUPyEVlQiVVx/YAYwBxxPiewRzwANLNbICOAA8s7DEUtEeq4Ipuiqf46cuWI2q4BDwiPBPgS+EP7QUI6PAN8Ati4ksKUIFPf4R0naOEM8khvcBJ4XvRrYC2Ct4CTBcPzWPAmvFvZXPRcRLuKAFUJRMhpXBDF3+l/imc0gRfQBUgBHgX+BB4KiY2AK8CRwCAiAN3JQCngMeW/wHF2qKqs56a8rj9JcOESlDiNersH0i2AHsBI4Bk8AAcKsYmQPGcas+ooHNrZmAUGXxotLZ/tLBPflwal1N5VHYMeBjkdydkB8UHCEOia8FL9UksluzzaIwtjoVqfT2iu74MBGgLwn2AlcK/0qwD+gQ/otgh4Z4dmtmtIpInQDbiws8gKmEpFtwWjAF5IXX60uulcw6v6kETzf06lp7ok9KwvktCjStpfmEiyjU1DaA+h34SbqHE5JJwXoAnwVmha8WPKdxx7RFE5ZQZVZrG+z1or83W/dOaeBhkUwkjIwI/gwUha8VnNG4tN1SM9anovPtv+ZvfqpoeieMrYCrqpeLZJ9gGlen4MJUf7XgtyngCeAPYJA4HUdAG3D/4lYsmcgPTuc34Jtehmefp2raf7CYaeBH4BURbiOOkdcFryAO7qP1zPriAr/0KvAW0N942MVpPqwxm17DP5lBOqunjpdM14DC1k9EB7BL+EnghPB7Ey/9zv8F6jguD+xfTGRslUhBIbcJl12i5LXvDVzhBKm0QIZ4tfcDs0s5MUVcWn5yIYFFkQ0DzmQG+StzFdnwDDY+1TXBl3FVF1zxyyV4U0d3D+5uOtNoUBMQKijkrsXYAH0+VXCHzNsqz0O4IgtwBLkONJtDxnBb9VGirwZuVXJhlRlvkEJuo6yKBpc9x0TbRVyHAO6KX6T5No27Ku6W5/Xxl9XQFibbtuCbTlK2OH9uJ3ES2wqcrg8s5xa/E/gNuB0wQGhReFGZOZOnkN0ofydyyTkTuK3KEh9jAP4DTc4hkE7Hk80AAAAASUVORK5CYII="; /* Шлях до зображення гучно */
+        } else if (volume > 0.2) {
+            volumeIconElement.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAYCAYAAACfpi8JAAAACXBIWXMAAAsTAAALEwEAmpwYAAAG/mlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDEgNzkuMTQ2Mjg5OSwgMjAyMy8wNi8yNS0yMDowMTo1NSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyNS0wNS0xNFQwNjowMjo1MyswMzowMCIgeG1wOk1vZGlmeURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MjkrMDM6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MjkrMDM6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOmU5Mjc0Y2Y4LWM5ZDItZTM0NC04NTFhLTgwZDc2Yzk1MmI2NSIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjIwZWRjMWU4LWU1YmItZjg0ZS1hYjM5LTM5ZDFiNmMxZTg2MiIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOmYxMmYzYzM4LTQ5Y2MtYTg0MS04ZDYwLTljMGM3MDI5ZGMyZCI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ZjEyZjNjMzgtNDljYy1hODQxLThkNjAtOWMwYzcwMjlkYzJkIiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjAyOjUzKzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNvbnZlcnRlZCIgc3RFdnQ6cGFyYW1ldGVycz0iZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6YjZiNmIwMTQtMzUyOC1iNDRhLTkwZmMtOWNlYWIwZGUzODI5IiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjE1OjQwKzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOmU5Mjc0Y2Y4LWM5ZDItZTM0NC04NTFhLTgwZDc2Yzk1MmI2NSIgc3RFdnQ6d2hlbj0iMjAyNS0wNS0xNFQwNjoxODoyOSswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/Pq/TefwAAAOPSURBVEiJrdddiFVVFMDx3z73Y+6I2tQ4aB8YaR9MYJklUkn5UGD50gelDz1UBNHHg/USRGUYJRVilEhRgRRRFD0FCeVDUGkp9mFiWiQ9JI4aY5rO3Dnee04PZw/3KndGmnG9rHXWXnvt/zl377X2DTeuHjIJeRB3Y1kWKhqhrP/YRr3pz9KkB3rwKL7E9vaJ69euOiVRMgmIVXgX1wS5elLWN/KjWfXvRiFgJV7EJvSNl2wiIFV8gefj8/FmqCrnnF//VjNUEUZjf4m6F6+fTZCF2I9b251pUjazvkNPuke91LuAfF4c+hQbor0Ci88GyEpsw4x2Zy6R5PSN/CDIFhN2YCcujSHPYjDaT04W5GOsGy+gGSpypZR81PVK1IN4I9p3Yu5EQC7DPtwzVkDQ1Agcq8yVaGwjvNS26KJof9A25a5OecqKnfU4rsa/ilcaQTfuxznjswZ54Ei1X700Q5KPrM1C9bE47z58j9/xFZbgZrzaCeQZrB5/sbElTbrNHtpqVn2LRuhWUh/EJ3gIt7WFbokg83EldrfnSXDTRCGaoaaaDQ/NHtq0pif9dWGSpzJliuNNsR/6o/1T1BfgwtNzJcgmCpILyvnwYKZyZ73U9xFBKDbrnrawi6L+K+qAWZ1A0omCFDAlWSgfDvI5uDy6D+JktKdF3b5ObyeQcLrzLEgNlWg3om7/8g2nSWJy/UbQUMrTmblkF36L7tltIX9H3d5r9ncCKU0UItGUJj3nNUP1te7moeV5653mR50q6hBcEfXRsUC+mTBInmqE0pQ/pt674Uilf3eSp2JlXRZDtmMg2tdGvVdRV06RMl7AISzACa2CVsMDijvFmNKVDTlYmysLd7jqnw1OhqmLcmFpHP4s6gpuifZWHOkEAm+Nsc56bMYlY4HkgnLGuelepbwuNf25ODSE96J9u1bt2Nwpz5k26j7MUTS9jtIMXaY0T5gxslMjTHkiLgov40C0H27L9/lEQEZlOR7pNBDkslCRhZKgIVaD7VptY6lWqX/HGAX0/xzdNzFPUaxaCfLUcFJ1uOs6lXx4XV60jNEOW9a6mR3Qug5MCgR2KX7rUz5vV5YbqN3gWPliXdnRrwmj5Xyj4ioBT+H42QKBpuJ4Ph2fp5XzYcOlLgO161Wy4/JWsR69Mn6I98dLWh5v8AyyRtHIVuRCqDWzfKC2WG+6y/STf0qTaRR/N5bg7TMl+w/rYwOXkX0MTgAAAABJRU5ErkJggg=="; /* Шлях до зображення середньої гучності */
+        } else if (volume > 0.01) {
+            volumeIconElement.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAYCAYAAACfpi8JAAAACXBIWXMAAAsTAAALEwEAmpwYAAAG/mlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDEgNzkuMTQ2Mjg5OSwgMjAyMy8wNi8yNS0yMDowMTo1NSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyNS0wNS0xNFQwNjowMjo1MyswMzowMCIgeG1wOk1vZGlmeURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MTkrMDM6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MTkrMDM6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjUwOGVlNzA4LWQxOTctYTM0MS1hZGU1LTEyNGY1N2NiN2EzZCIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjJjYmRkN2Y4LWFmOWItMDE0My1hMGNmLThkOWQ1NzVjYTBhZCIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjg4ZDQyYWE1LWU4OTYtZGI0Mi05NWZhLWVlODE0NzE2M2JhYyI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6ODhkNDJhYTUtZTg5Ni1kYjQyLTk1ZmEtZWU4MTQ3MTYzYmFjIiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjAyOjUzKzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNvbnZlcnRlZCIgc3RFdnQ6cGFyYW1ldGVycz0iZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6M2FiMzhhMWItNTcyMC0zNjRhLWI3NTctZmU1MmMxMGIxN2VkIiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjE2OjM4KzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjUwOGVlNzA4LWQxOTctYTM0MS1hZGU1LTEyNGY1N2NiN2EzZCIgc3RFdnQ6d2hlbj0iMjAyNS0wNS0xNFQwNjoxODoxOSswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PnUnQe4AAAL6SURBVEiJtZdNaB1VFMd/Z2Ze3puXmI+GRNOgpmYRMBC6aN0ErUFXYgmC4KZYkGJA6Ea6KFmIuBGhi7gTMVAoCF0UgxjcFQkBF6Ii0UXEryRNDelHiMnLvPfuu3NczCR5BJ/vzouezWXuPfOf3zlz5tw7Mv7eHsewd4FzwMT+hBBjJARiCnaXWISFd7qaCgXHgJgF3gCWD6cUI0VAGdn5lC7zM8brAK42FfNaADgJ/JRCAFTr5YwnPFW6xWB0Gw9DPt5yEs2akfPAHP8YgFLxQrrNGo+Vv2Y3GCSWPKBOwlkycg34vPE9HlZgIFok0AgrBWcIcMtIFzAPjDd2USp+SI9Zo6/yHWWvFyF2hoDmGZkA1v8dAhT/IBu5eAcr+QDIZQEJgCJwBRgC/iLJZ4mkKF8H/GYipSBPt9mkr/I9Zb+3KMQ/AAPAKLDiCvIhcCkLfb0ZL2QwWmKoNIeKYCV/QtBTaQDTwJSLjgecbhXCSoFcHNWGd2++1VFbe8JIB4LeAT5JXV4BXnAFcS/tI6YIgUYbVvKXy37vbF2BfpaOfcAzriDSKkgC4xNLsCXoiyT1BrAEB1SDriD/he0Hs//wXJ22dQU5VkYEK57WehT5Eiin02frXFZdQVquEUGpSdjva3UmHz98Uw8TfCEdfwG+cgX5plUQX8tUvTD3R/vkR5E/cMfXMiATwGTqcgP41kUrAN4maTrDJI0MYA94FLhIk22gLY5YLZ5hz+9jbHsGI/6K4u+lmtdcgwpI3usHDdavA1+Q7DcNTCnaGtttT7KdG6Gn+uNvkd/fLagCNVeQZl/NIvA4sNDYRfC1igXuhs8iCB6xyQLhAgKwQ3IcfL+RgyKE1nC/bZQHbaMU7D00Y2fI4j0NvEyDSD0MscCf4XMIikeVLJ0ha0ObJ3lVS0cXFKFgK2zmn2Y9fJ5Os0KguwQa/S8gABvAGPBxel04FLPkYvi1/VVWiy9hJaTqdTqJHucUPwX8Tt2vhCLktISRAsuPvEZo9483ze1v/Gzp7dWDJUgAAAAASUVORK5CYII="; /* Шлях до зображення тихої гучності */
+        } else {
+            volumeIconElement.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACIAAAAYCAYAAACfpi8JAAAACXBIWXMAAAsTAAALEwEAmpwYAAAG/mlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDEgNzkuMTQ2Mjg5OSwgMjAyMy8wNi8yNS0yMDowMTo1NSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyNS0wNS0xNFQwNjowMjo1MyswMzowMCIgeG1wOk1vZGlmeURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MjQrMDM6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjUtMDUtMTRUMDY6MTg6MjQrMDM6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjdiY2U4MTg0LWE4YWEtMWM0OS05ZTliLTViNmE2OTEyYTlhZCIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjhhZmQ3MTEwLTg1MjAtMDg0ZS1hMzkyLWQ3ZjUxMTc3YjBhNyIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOmE1YTVhYTZmLTFiNTItZGQ0YS1iYzJlLTlkZGJiZjJiZjg4MCI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6YTVhNWFhNmYtMWI1Mi1kZDRhLWJjMmUtOWRkYmJmMmJmODgwIiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjAyOjUzKzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNvbnZlcnRlZCIgc3RFdnQ6cGFyYW1ldGVycz0iZnJvbSBhcHBsaWNhdGlvbi92bmQuYWRvYmUucGhvdG9zaG9wIHRvIGltYWdlL3BuZyIvPiA8cmRmOmxpIHN0RXZ0OmFjdGlvbj0ic2F2ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6OTQ4OTlhMjktNDRlMC03YzQ2LTg2NDMtNmMyNWI1N2Y5NDY4IiBzdEV2dDp3aGVuPSIyMDI1LTA1LTE0VDA2OjE0OjEyKzAzOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMiAoV2luZG93cykiIHN0RXZ0OmNoYW5nZWQ9Ii8iLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjdiY2U4MTg0LWE4YWEtMWM0OS05ZTliLTViNmE2OTEyYTlhZCIgc3RFdnQ6d2hlbj0iMjAyNS0wNS0xNFQwNjoxODoyNCswMzowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI1LjIgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDwvcmRmOlNlcT4gPC94bXBNTTpIaXN0b3J5PiA8L3JkZjpEZXNjcmlwdGlvbj4gPC9yZGY6UkRGPiA8L3g6eG1wbWV0YT4gPD94cGFja2V0IGVuZD0iciI/PkDCnSMAAAN4SURBVEiJrdbbi1VlGMfxz7vW3nPWhkxzrBSHDuSElwVJImiQiEF63YGkLiqK8g8IvCgICoIsQQIrigKFqSg7CKJhF1505VhBUClpWQaNs2fPPqz1drH36Hbae5qDD6zFep/n9z7v9314Dyts2DNpEfYSluKZaUeQy0KXqaQooB64beKItaVR5XT55Y5vvPriVYkKi4A4gEfx9RWIqBb6pXHSmtJJ3flF3fFvA7WzKsngrMkWArK6OfjtzfbEdCCXqiUMX/rMcGlUNRkUJSrJdbLQI8iuGcgOHERo8YXGKyqn3VZUTru5fNQ/xWFREbEp6gwByTwgXsehGRCXLVeURIbKx0VBrusyxFxsLhUZxJe4u5MgiCbTohsrY5ZVx0ylywX5nCH4/4psxm+zQRBloVuCofI3iPJ5FbphBQzgedyCS03/hMaifGy2zkGUhVSpkLppcsz11TFT6bKhIO7Hx9g/o8t27MYL+G4myF48Mu8pIFcQFd0xftiqqWNqSb9c+nQQt2EbinizKX8AnzS/n505yQQbFgIB1aTL0tpPQ2tLhx4Osd5TDwOC+FWLZK/GTluPwy3+w2ZYgq6FgsRAIVYm6smSfbVkYE9zix7HphbZe/i2pf0oPmoHUl8oSIjkIa3k0lIQd7aEjuFOlNGH/qZ/C95tl2v+y/u/liNrk6vdIdLbKUmyGJgYSGLWm8iWRuHDltAm/NAceBKlpv9TPNUu12IuPSFSD91LCvmlJ3PpwWoyKMg24miLbAfO4HSzvbcJd6A1V4ITCwXpyqvGi7ee+7l/5/sxFCqFOCEKm1skj2ucyt/j/hb/ppm5CngCp7DGlZt0AiuxyyxVS9RF0Y9Lt5oorLZufJ887X4rStZjFO+0yI9gK57DK+1AJvFyh7E+wOeurPqrLAqSmOmvZy70jFg5NWJZ9dTvk+mKh0L7C++L5tNmUrPbcY1KnewsCdJYkeN8730IknleeHMBgYu4B691EkRBb1bzV9eIi10jerI/xXluxvmod+NB2v/hJGrywPnejYJcqqrDr8uiQWicA6swNjMQBT1ZxYXudc72brGk9qu++nl92R+SWBOlsyZeyDlyAXfhbY3tOTAdSGSKee6X/u2m0iFpLMsVraycUMzHZaHnmoJM2y6cww3TjigoxrJMlzN994qopITxquHSqHLaGeRfGK4YcxGkxA4AAAAASUVORK5CYII="; /* Шлях до зображення вимкненої гучності */
+        }
+    }
+
+    updateVolumeIcon(volumeLevel);
+    </script>
+</body>
+</html>
