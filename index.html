@@ -7,6 +7,34 @@
     <meta name="google-site-verification" content="rDem-nSrC_KaMoKwS-HkyKsgSk7WFUXZnNLstY-dHWw" />
     <meta name="description" content="Аудіоплеєр з субтитрами, який дозволить слухати аудіофайли з субтитрами. Наприклад, добре підходить для ASMR. Можна завантажити та використовувати офлайн як програвач. Підтримує такі формати як .vtt та .srt. (Audio player with subtitles, supports .vtt and .srt subtitle formats).">
     <style>
+        /* Стилі для кнопки "Підтримати проєкт" */
+        .support-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px; /* Додано відступ зверху */
+            margin-bottom: 20px; /* Додано відступ знизу */
+            position: absolute; /* Абсолютне позиціонування */
+            top: 10px;          /* Верхній відступ */
+            right: 10px;        /* Правий відступ */
+        }
+
+        .support-button:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .support-button span {
+            margin-left: 8px;
+        }
         /* Загальні стилі */
         body {
             font-family: 'Inter', sans-serif;
@@ -420,6 +448,9 @@
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <a href="https://kuudere-phile.github.io/donate/" target="_blank" class="support-button">
+        <span>Підтримати розробника</span>
+    </a>
     <div class="container">
         <h1 class="text-2xl font-semibold text-gray-800 mb-4">Аудіоплеєр з субтитрами</h1>
         <div class="flex flex-col items-center">
