@@ -445,9 +445,41 @@
         color: inherit;
         }
 
+
+        /* Стилі для кнопки "На головну" */
+        .home-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 4px;
+            background-color: #3b82f6; /* Синій колір */
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px; /* Додано відступ зверху */
+            margin-bottom: 20px; /* Додано відступ знизу */
+            position: absolute; /* Абсолютне позиціонування */
+            top: 10px;          /* Верхній відступ */
+            left: 10px;         /* Лівий відступ */
+        }
+
+        .home-button:hover {
+            background-color: #2563eb; /* Темніший синій при наведенні */
+            transform: translateY(-2px);
+        }
+
+        .home-button span {
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <a href="https://kuudere-phile.github.io/kuuderephile/" class="home-button">
+        <span>На головну</span>
+    </a>
     <a href="https://kuudere-phile.github.io/donate/" target="_blank" class="support-button">
         <span>Підтримати розробника</span>
     </a><br>
